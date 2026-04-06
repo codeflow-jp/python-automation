@@ -2,9 +2,9 @@
     "name_column": "名前",
     "value_column": "月収",
     "thresholds": [
-        {"label": "目標達成！", "min": 300000},
-        {"label": "順調です",   "min": 100000},
-        {"label": "副業軌道中", "min": 30000},
+        {"label": "目標達成！", "min": 500000},
+        {"label": "順調です",   "min": 300000},
+        {"label": "軌道中",     "min": 200000},
         {"label": "まだこれから", "min": 0}
     ],
     "sheet_name": "集計結果"
