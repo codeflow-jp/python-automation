@@ -1,45 +1,62 @@
 import csv
+import json
 import openpyxl
+import sys
+import os
 
-# ① CSVを読み込む
-def read_csv(filename):
+# ① 設定ファイルを読み込む
+def load_config(config_path="config.json"):
+    with open(config_path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+# ② CSVを読み込む
+def read_csv(filepath):
     results = []
-    with open(filename, "r", encoding="utf-8") as f:
+    with open(filepath, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
             results.append(row)
     return results
 
-# ② ステータスを判定する
-def check_status(income):
-    if income >= 300000:
-        return "目標達成！"
-    elif income >= 100000:
-        return "順調です"
-    elif income >= 30000:
-        return "副業軌道中"
-    else:
-        return "まだこれから"
+# ③ ステータスを判定する
+def check_status(value, thresholds):
+    for t in thresholds:
+        if value >= t["min"]:
+            return t["label"]
+    return "判定不可"
 
-# ③ Excelに書き出す
-def write_excel(data, filename):
+# ④ Excelに書き出す
+def write_excel(data, config, output_path):
+    name_col = config["name_column"]
+    value_col = config["value_column"]
+    thresholds = config["thresholds"]
+    sheet_name = config["sheet_name"]
+
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "集計結果"
+    ws.title = sheet_name
 
-    ws["A1"] = "名前"
-    ws["B1"] = "月収"
-    ws["C1"] = "ステータス"
+    ws.append([name_col, value_col, "ステータス"])
 
     for row in data:
-        name = row["名前"]
-        income = int(row["月収"])
-        status = check_status(income)
-        ws.append([name, income, status])
+        name = row[name_col]
+        value = int(row[value_col])
+        status = check_status(value, thresholds)
+        ws.append([name, value, status])
 
-    wb.save(filename)
-    print("完了：" + filename + " を作成しました")
+    wb.save(output_path)
+    print("完了：" + output_path + " を作成しました")
 
-# ④ 実行
-sales = read_csv("practice_claude/sales.csv")
-write_excel(sales, "practice_claude/集計結果.xlsx")
+# ⑤ 実行
+if __name__ == "__main__":
+    config = load_config("config.json")
+
+    csv_file = sys.argv[1] if len(sys.argv) > 1 else "sales.csv"
+    output_file = sys.argv[2] if len(sys.argv) > 2 else "集計結果.xlsx"
+
+    if not os.path.exists(csv_file):
+        print("エラー：" + csv_file + " が見つかりません")
+        sys.exit(1)
+
+    data = read_csv(csv_file)
+    write_excel(data, config, output_file)
